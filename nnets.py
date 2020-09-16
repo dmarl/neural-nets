@@ -67,7 +67,7 @@ class nnet(object):
             a = sig(np.dot(weight, a)+bias)
         return a
     
-    def fit(self, training, eta, batch_size, epochs, lmbda=0.0, mu=0.0, test=None, graph=True):
+    def fit(self, training, eta=.5, batch_size=10, epochs=50, lmbda=0.0, mu=0.0, test=None, graph=True):
         # stochastic gradient descent with momentum and regularization in
         # in epochs on minibatches of size batch_size on tuples of training
         #  data (training) with learning rate eta, regularity parameter
