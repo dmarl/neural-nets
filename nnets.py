@@ -2,17 +2,20 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 
-def sig(z):
-    return 1.0/(1.0+np.exp(-z))
+class sig(object):
+    @staticmethod
+    def fn(z):
+        return 1.0/(1.0+np.exp(-z))
+        
+    def fn_prime(z):
+        return (1-fn(z))*fn(z)
 
-def sig_prime(z):
-    return (1-sig(z))*sig(z)
-
-def tanh(z):
-    return (np.exp(2*z)-1)/(np.exp(2*z)+1)
-
-def tanh_prime(z):
-    return 1 - tanh(z)**2
+class tanh(object):
+    def fn(z):
+        return (np.exp(2*z)-1)/(np.exp(2*z)+1)
+        
+    def fn_prime(z):
+        return 1 - fn(z)**2
 
 def softmax(xs):
     ys = [np.exp(x) for x in xs]
@@ -28,7 +31,7 @@ class quadcost(object):
         return .5*np.linalg.norm(a-y)**2
         
     def delta(z, a, y):
-        return (a-y)*sig_prime(z)
+        return (a-y)*act_fn.fn_prime(z)
     
 class crossentropy(object):
     @staticmethod
@@ -38,7 +41,7 @@ class crossentropy(object):
     def delta(z, a, y):
         return (a-y)
 
-class loglikelihoodd(object):
+class loglikelihood(object):
     @staticmethod
     def fn(a, y):
         return -np.log(a[np.argmax(y)])
@@ -47,24 +50,19 @@ class loglikelihoodd(object):
         return (a-y)
 
 class nnet(object):
-    def __init__(self, layers, act_fn='sig', cost=quadcost):
+    def __init__(self, layers, act_fn=sig, cost=quadcost):
         self.depth=len(layers)
         self.layers=layers
         # random initial assignment of weights and biases
         self.weights=[np.random.randn(y, x)/np.sqrt(x) for x, y in zip(layers[:-1], layers[1:])]
         self.biases=[np.random.randn(x, 1) for x in layers[1:]]
         self.cost=cost
-        if act_fn == 'tanh':
-            fn = tanh
-            fn_prime = tanh_prime
-        else:
-            fn = sig
-            fn_prime = sig_prime
+        self.act_fn = act_fn
         
     def feed_forward(self, a):
         # compute network output
         for bias, weight in zip(self.biases, self.weights):
-            a = sig(np.dot(weight, a)+bias)
+            a = act_fn.fn(np.dot(weight, a)+bias)
         return a
     
     def fit(self, training, eta=.5, batch_size=10, epochs=50, lmbda=0.0, mu=0.0, test=None, graph=True):
@@ -121,7 +119,7 @@ class nnet(object):
         for bias, weight in zip(self.biases, self.weights):
             z = np.dot(weight, act) + bias
             zs.append(z)
-            act = sig(z)
+            act = act_fn.fn(z)
             acts.append(act)
         
         delta = (self.cost).delta(zs[-1], acts[-1], y)
@@ -130,7 +128,7 @@ class nnet(object):
         
         # backpropagate
         for i in range(2, self.depth):
-            delta = np.dot(self.weights[-i+1].transpose(), delta) * sig_prime(zs[-i])
+            delta = np.dot(self.weights[-i+1].transpose(), delta) * act_fn.fn_prime(zs[-i])
             del_b[-i] = delta
             del_w[-i] = np.dot(delta, acts[-i-1].transpose())
         return (del_b, del_w)
@@ -138,3 +136,12 @@ class nnet(object):
     def score(self, test):
         results = [(np.argmax(self.feed_forward(x)), y) for (x, y) in test]
         return sum(int(x==y) for (x, y) in results)/len(results)
+
+class max(object):
+    @staticmethod
+    def fn(xs):
+        return (argmax(xs[i], max(xs)))
+
+
+class conv_layer(object):
+    def __init__(self, image_dim, filter_dim, act_fn=sig, pool=max):
