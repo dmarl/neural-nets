@@ -1,3 +1,61 @@
+import numpy as np
+import random
+import matplotlib.pyplot as plt
+
+class sig(object):
+    @staticmethod
+    def fn(z):
+        return 1.0/(1.0+np.exp(-z))
+        
+    def fn_prime(z):
+        return np.exp(-z)/(1+np.exp(-z))**2
+
+class tanh(object):
+    def fn(z):
+        return (np.exp(2*z)-1)/(np.exp(2*z)+1)
+        
+    def fn_prime(z):
+        return 4.0/(np.exp(-2*z)+2+np.exp(2*z))
+
+class softplus(object):
+    def fn(z):
+        return np.log(1+np.exp(z))
+        
+    def fn_prime(z):
+        return 1.0/(1.0+np.exp(-z))
+
+def softmax(xs):
+    ys = [np.exp(x) for x in xs]
+    y = sum(ys)
+    zs = np.zeros(xs.shape)
+    for i in range(len(xs)):
+        zs[i] = ys[i]/y
+    return zs
+
+class quadcost(object):
+    @staticmethod
+    def fn(a, y):
+        return .5*np.linalg.norm(a-y)**2
+        
+    def delta(z, a, y):
+        return (a-y)*act_fn.fn_prime(z)
+    
+class crossentropy(object):
+    @staticmethod
+    def fn(a, y):
+        return np.sum(np.nan_to_num(-y*np.log(a)-(1-y)*np.log(1-a)))
+        
+    def delta(z, a, y):
+        return (a-y)
+
+class loglikelihood(object):
+    @staticmethod
+    def fn(a, y):
+        return -np.log(a[np.argmax(y)])
+    
+    def delta(z, a, y):
+        return (a-y)
+
 
 def conv(m, n, i, j):
     (a, b) = n.shape
@@ -37,6 +95,7 @@ class conv_nn(object):
         self.cost = cost
         self.act_fn = act_fn
     
+    
     def feed_forward(self, a, backprop=False):
         x0 = self.dim_im[0]-self.dim_filt[0]+1
         y0 = self.dim_im[1]-self.dim_filt[1]+1
@@ -74,6 +133,7 @@ class conv_nn(object):
         if backprop:
             return acts, zs
         return acts[-1]
+
 
     def backprop(self, x, y):
         x0 = self.dim_im[0]-self.dim_filt[0]+1
@@ -145,6 +205,7 @@ class conv_nn(object):
             if test:
                 plt.plot(xs, tc, color='red')
             plt.show()
+           
             
     def batch_update(self, batch, eta, lmbda, n):
         # updates weights and biases in batches
