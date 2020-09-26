@@ -2,6 +2,16 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 
+import mnist_loader as mn
+
+trda, vada, teda = mn.load_data_wrapper()
+
+xs = list(trda)
+ys=list(teda)
+xs = list(zip([i[0].reshape(28,28) for i in xs], [i[1] for i in xs]))
+ys = list(zip([i[0].reshape(28,28) for i in ys], [i[1] for i in ys]))
+
+
 class sig(object):
     @staticmethod
     def fn(z):
@@ -56,10 +66,9 @@ class loglikelihood(object):
     def delta(z, a, y):
         return (a-y)
 
-
 def conv(m, n, i, j):
-    (a, b) = n.shape
-    return sum(m[i+k][j+l]*n[k][l] for k in range(a) for l in range(b))
+    a, b = n.shape
+    return sum(sum(m[i:i+a, j:j+b]*n))
 
 def repack_im(im, dim):
     sqim = np.zeros((dim, dim))
@@ -75,8 +84,8 @@ def unravel(xs, l, m, n):
             for k in range(n):
                 tsr[i][j][k] = xs[i*m*n+j*n+k]
     return tsr
-    
-class conv_nn(object):
+
+class nnet(object):
     def __init__(self, feat_maps=3, dim_im=(28,28), dim_filt=(5,5), layers=[10], dim_pool=(2,2), act_fn = sig, cost=crossentropy):
         # convolutional neural net, receiving as input an image of dimension dim_im (rows x cols)
         # with one convolution layer (with feat_maps feature maps and filter of size dim_filter
@@ -95,7 +104,7 @@ class conv_nn(object):
         self.cost = cost
         self.act_fn = act_fn
     
-    
+
     def feed_forward(self, a, backprop=False):
         x0 = self.dim_im[0]-self.dim_filt[0]+1
         y0 = self.dim_im[1]-self.dim_filt[1]+1
