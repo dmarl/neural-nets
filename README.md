@@ -17,7 +17,7 @@ where:
 - eta is the learning rate
 - batch_size is the size of minibatches (1 for on-line learning)
 - epochs is the number of training epochs
-- lmbdda is the regularisation parameter
+- lmbda is the regularisation parameter
 - mu is the friction parameter for momentum (0 for learning without using momentum)
 - test is (optional) test data for outputting the learning rate
 - graph = True plots the classification success rate by epoch on training (and test if selected) data
@@ -34,7 +34,7 @@ where:
 - eta is the learning rate
 - batch_size is the size of minibatches (1 for on-line learning)
 - epochs is the number of training epochs
-- lmbdda is the regularisation parameter
+- lmbda is the regularisation parameter
 - test is (optional) test data for outputting the learning rate
 - graph = True plots the classification success rate by epoch on training (and test if selected) data
 
