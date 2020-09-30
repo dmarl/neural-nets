@@ -155,6 +155,10 @@ class nnet(object):
             delta = np.dot(self.weights[-i+1].transpose(), delta) * self.act_fn.fn_prime(zs[-i])
             del_b[-i] = delta
             del_w[-i] = np.dot(delta, acts[-i-1].transpose())
+            
+        del_b = [db / (1-self.p_drop) for db in del_b]
+        del_w = [dw / (1-self.p_drop) for dw in del_w]
+        
         return (del_b, del_w)
     
     def score(self, test):
