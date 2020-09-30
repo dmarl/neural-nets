@@ -19,6 +19,22 @@ class sig(object):
     def fn_prime(z):
         return np.exp(-z)/(1+np.exp(-z))**2
 
+class relu(object):
+    @staticmethod
+    def fn(z):
+        return [max(0,x) for x in z]
+    
+    def fn_prime(z):
+        return [int((x > 0)) for x in z]
+        
+class softplus(object):
+    @staticmethod
+    def fn(z):
+        return np.log(1+np.exp(z))
+        
+    def fn_prime(z):
+        return 1/(1+np.exp(-z))
+
 class tanh(object):
     def fn(z):
         return (np.exp(2*z)-1)/(np.exp(2*z)+1)
