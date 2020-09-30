@@ -2,6 +2,15 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 
+import mnist_loader as mn
+trda, vada, teda = mn.load_data_wrapper()
+xs = list(trda)
+ys=list(teda)
+
+def dropout(X, p):
+    mask = np.random.uniform(0.0, 1.0, size = X.shape)
+    return X*mask/(1-p)
+
 class sig(object):
     @staticmethod
     def fn(z):
@@ -57,7 +66,7 @@ class loglikelihood(object):
         return (a-y)
 
 class nnet(object):
-    def __init__(self, layers, act_fn=sig, cost=quadcost):
+    def __init__(self, layers, act_fn=sig, cost=quadcost, p_drop=0, decay_rate=1):
         self.depth=len(layers)
         self.layers=layers
         # random initial assignment of weights and biases
@@ -65,6 +74,8 @@ class nnet(object):
         self.biases=[np.random.randn(x, 1) for x in layers[1:]]
         self.cost=cost
         self.act_fn = act_fn
+        self.p_drop = p_drop
+        self.decay_rate=decay_rate
         
     def feed_forward(self, a):
         # compute network output
@@ -72,7 +83,7 @@ class nnet(object):
             a = self.act_fn.fn(np.dot(weight, a)+bias)
         return a
     
-    def fit(self, training, eta=.5, batch_size=10, epochs=50, lmbda=0.0, mu=0.0, test=None, graph=True):
+    def fit(self, training, eta=.5, batch_size=10, epochs=50, lmbda=0.0, mu=0.0, test=None, graph=True, w_max=None):
         # stochastic gradient descent with momentum and regularization in
         # in epochs on minibatches of size batch_size on tuples of training
         #  data (training) with learning rate eta, regularity parameter
@@ -85,12 +96,13 @@ class nnet(object):
             random.shuffle(training)
             batches = [training[k:k+batch_size] for k in range(0, n, batch_size)]
             for batch in batches:
-                self.batch_update(batch, eta, lmbda, mu, len(training))
+                self.batch_update(batch, eta, lmbda, mu, len(training), w_max)
             training_results = [(np.argmax(self.feed_forward(x)), np.argmax(y)) for (x, y) in training]
             lc.append(sum(int(x==y) for (x, y) in training_results)/len(training_results))
             if test:
                 test_results = [(np.argmax(self.feed_forward(x)), y) for (x, y) in test]
                 tc.append(sum(int(x==y) for (x, y) in test_results)/len(test_results))
+            eta *= self.decay_rate
         xs = [i for i in range(epochs)]
         if graph:
             plt.plot(xs, lc, color='green')
@@ -98,7 +110,7 @@ class nnet(object):
                 plt.plot(xs, tc, color='red')
             plt.show()
             
-    def batch_update(self, batch, eta, mu, lmbda, n):
+    def batch_update(self, batch, eta, mu, lmbda, n, w_max):
         # updates weights and biases in batches
         
         vels = [np.zeros(weight.shape) for weight in self.weights]
@@ -108,10 +120,12 @@ class nnet(object):
             delta_b, delta_w = self.backprop(x, y)
             del_b = [db + dtb for db, dtb in zip(del_b, delta_b)]
             del_w = [dw + dtw for dw, dtw in zip(del_w, delta_w)]
-        self.biases = [bias - db*eta/len(batch) for bias, db in zip(self.biases, del_b)] 
+        self.biases = [bias - db*eta/len(batch) for bias, db in zip(self.biases, del_b)]
         self.weights = [weight*(1-lmbda*eta/n)-dw*eta/len(batch) + mu*vel for weight, dw, vel in zip(self.weights, del_w, vels)]  # final batch not guaranteed to be of size batch_size...
+        if w_max:
+            self.weights = [weight * w_max / np.linalg.norm(weight) if np.linalg.norm(weight) > w_max else weight for weight in self.weights]
         vels = [-dw*eta/len(batch) for dw in del_w]
-                        
+
     def backprop(self, x, y):
         # computes partial derivatives of cost function (self.cost)
         # wrto weights and biases
@@ -127,7 +141,10 @@ class nnet(object):
             z = np.dot(weight, act) + bias
             zs.append(z)
             act = self.act_fn.fn(z)
+            if self.p_drop:
+                act = dropout(act, self.p_drop)
             acts.append(act)
+            
         
         delta = (self.cost).delta(zs[-1], acts[-1], y)
         del_b[-1] = delta

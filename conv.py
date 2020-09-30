@@ -8,7 +8,7 @@ trda, vada, teda = mn.load_data_wrapper()
 
 xs = list(trda)
 ys=list(teda)
-xs = list(zip([i[0].reshape(28,28) for i in xs], [i[1] for i in xs]))
+xs = list(zip([i[0].reshape(28,28) for i in xs], [i[1] for i in xs))]))
 ys = list(zip([i[0].reshape(28,28) for i in ys], [i[1] for i in ys]))
 
 
